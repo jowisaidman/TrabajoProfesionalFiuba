@@ -1,6 +1,7 @@
-# Scan wifi
+# AP mode
 
-Dentro de WiFiScan.ino tendremos un loop infinito que esta escaneando las distintas redes.
+Con ap_mode.ino vamos a poder crear una red wifi con nuestro ESP32. En el ejemplo la red va tener una contraseña,
+en caso de querer una red abierta le pasamos el parametro de contraseña vacio.
 
 ### Run
 

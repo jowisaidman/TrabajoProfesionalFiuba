@@ -44,6 +44,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
         ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d",
                  MAC2STR(event->mac), event->aid);
+    } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
+        ESP_LOGI(TAG, "Se assigno IP");
+        // Print the IP assigned to the station and the MAC address of the station
+        ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
+        ESP_LOGI(TAG, "station ip:" IPSTR ", mac:" MACSTR "",
+                 IP2STR(&event->ip), MAC2STR(event->mac));
+
     }
 }
 
@@ -62,8 +69,8 @@ void wifi_init_softap(void)
                                                         NULL,
                                                         NULL));
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_NETIF_IP_EVENT_GOT_IP,
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                        IP_EVENT_AP_STAIPASSIGNED,
                                                         &wifi_event_handler,
                                                         NULL,
                                                         NULL));

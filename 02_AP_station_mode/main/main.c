@@ -19,6 +19,15 @@
 #include "nvs_flash.h"
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
+#define EXAMPLE_ESP_MAXIMUM_RETRY  10
+static EventGroupHandle_t s_wifi_event_group;
+
+
+/* The event group allows multiple bits for each event, but we only care about two events:
+ * - we are connected to the AP with an IP
+ * - we failed to connect after the maximum amount of retries */
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT      BIT1
 
 static const char *TAG = "station";
 
@@ -74,14 +83,6 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static EventGroupHandle_t s_wifi_event_group;
-
-/* The event group allows multiple bits for each event, but we only care about two events:
- * - we are connected to the AP with an IP
- * - we failed to connect after the maximum amount of retries */
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
-
 void app_main(void){
 
     s_wifi_event_group = xEventGroupCreate();
@@ -125,6 +126,9 @@ void app_main(void){
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_connect());
 
+    // Get the IP address of the AP that the station is connected and print it
+    // esp_wifi_sta_get_ap_info(&record);
+
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
@@ -136,8 +140,8 @@ void app_main(void){
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-                 "EXAMPLE_ESP_WIFI_SSID", "EXAMPLE_ESP_WIFI_PASS");
+        ESP_LOGI(TAG, "connected to ap SSID:%s",
+                 (const char *)record.ssid);
     } else if (bits & WIFI_FAIL_BIT) {
         ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
                  "EXAMPLE_ESP_WIFI_SSID", "EXAMPLE_ESP_WIFI_PASS");

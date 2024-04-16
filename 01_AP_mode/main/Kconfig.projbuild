@@ -23,4 +23,17 @@ menu "Example Configuration"
         default 4
         help
             Max number of the STA connects to AP.
+
+    config CONFIG_EXAMPLE_IPV4
+        int "Maximal STA connections"
+        default 1
+        help
+            Max number of the STA connects to AP.
+
+    config CONFIG_EXAMPLE_PORT
+        int "Maximal STA connections"
+        default 3333
+        help
+            PORT to connect
+
 endmenu

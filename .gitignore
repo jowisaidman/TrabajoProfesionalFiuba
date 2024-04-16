@@ -1,2 +1,5 @@
 **/build
 examples/
+esp-idf/
+.DS_Store
+.vscode/

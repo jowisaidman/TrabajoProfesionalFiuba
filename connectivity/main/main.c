@@ -24,6 +24,7 @@
 #include "nvs_flash.h"
 
 #include "station.h"
+#include "access_point.h"
 
 // static void udp_server_task(void *pvParameters) {
 //   char rx_buffer[128];
@@ -153,15 +154,26 @@
 
 void app_main(void) {
   
-  init_station_mode();
+  // init_station_mode();
 
-  wifi_ap_record_t record = discover_wifi_ap("ESP_");
 
-  // Connect to the AP with the record found
-  wifi_config_t wifi_config = {};
-  strcpy((char *)wifi_config.sta.ssid, (const char *)record.ssid);
-  connect_to_wifi(wifi_config);
+  // wifi_ap_record_t record = discover_wifi_ap("ESP_");
 
-  // Wait for the connection to be established
-  wait_connection_established();
+  // // Connect to the AP with the record found
+  // wifi_config_t wifi_config = {};
+  // strcpy((char *)wifi_config.sta.ssid, (const char *)record.ssid);
+  // connect_to_wifi(wifi_config);
+
+  // // Wait for the connection to be established
+  // wait_connection_established();
+
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
+  ESP_LOGI("STATION", "ESP_WIFI_MODE_AP");
+  wifi_init_softap();
 }

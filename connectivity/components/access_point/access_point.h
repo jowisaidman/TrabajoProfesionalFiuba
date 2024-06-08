@@ -13,3 +13,4 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 * @brief Initialize the WiFi in AP mode
 */
 void wifi_init_softap(void);
+

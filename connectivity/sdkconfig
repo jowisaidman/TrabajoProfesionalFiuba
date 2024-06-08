@@ -1,6 +1,6 @@
 #
 # Automatically generated file. DO NOT EDIT.
-# Espressif IoT Development Framework (ESP-IDF)  Project Configuration
+# Espressif IoT Development Framework (ESP-IDF) 5.1.1 Project Configuration
 #
 CONFIG_SOC_BROWNOUT_RESET_SUPPORTED="Not determined"
 CONFIG_SOC_TWAI_BRP_DIV_SUPPORTED="Not determined"
@@ -339,13 +339,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
 
 #
-# Example Configuration
-#
-CONFIG_EXAMPLE_SCAN_LIST_SIZE=10
-# end of Example Configuration
-
-#
-# Example Configuration
+# Access point Configuration
 #
 CONFIG_ESP_WIFI_SSID="myssid"
 CONFIG_ESP_WIFI_PASSWORD="mypassword"
@@ -353,7 +347,14 @@ CONFIG_ESP_WIFI_CHANNEL=1
 CONFIG_ESP_MAX_STA_CONN=4
 CONFIG_CONFIG_EXAMPLE_IPV4=1
 CONFIG_CONFIG_EXAMPLE_PORT=3333
-# end of Example Configuration
+# end of Access point Configuration
+
+#
+# Station Configuration
+#
+CONFIG_EXAMPLE_SCAN_LIST_SIZE=10
+CONFIG_WIFI_PREFIX_SSID="ESP32_"
+# end of Station Configuration
 
 #
 # Compiler options

@@ -1,8 +1,12 @@
+
+
+
 #include <lwip/netdb.h>
 #include <string.h>
 
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_netif.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -11,6 +15,7 @@
 #include "lwip/sys.h"
 #include "nvs_flash.h"
 #include "station.h"
+#include "../tcp_client/tcp_client.h"
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
 #define EXAMPLE_ESP_MAXIMUM_RETRY 10
@@ -23,7 +28,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT BIT1
 #define PORT 3333
 
-static const char *TAG = "station";
+static const char* TAG = "station";
 
 static int s_retry_num = 0;
 
@@ -98,12 +103,12 @@ wifi_ap_record_t discover_wifi_ap(const char* wifi_ssid_like) {
 }
 
 /*
-* @brief Event handler for WiFi events for station mode
-* @param arg The argument passed during handler registration
-* @param event_base The event base
-* @param event_id The event id
-* @param event_data The event data
-*/
+ * @brief Event handler for WiFi events for station mode
+ * @param arg The argument passed during handler registration
+ * @param event_base The event base
+ * @param event_id The event id
+ * @param event_data The event data
+ */
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
@@ -121,6 +126,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
     ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+
+    // Retrieve and print IP address, netmask, and gateway
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+    ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+    ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+    ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+    tcp_client(inet_ntoa(ip_info.gw));
     s_retry_num = 0;
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);

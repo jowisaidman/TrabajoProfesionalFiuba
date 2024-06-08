@@ -1,2 +1,2 @@
-idf_component_register(SRCS "control.c"
+idf_component_register(SRCS "networking.c"
                     INCLUDE_DIRS ".")

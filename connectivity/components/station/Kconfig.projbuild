@@ -9,7 +9,7 @@ menu "Station Configuration"
     
     config WIFI_PREFIX_SSID
         string "Prefix for SSID"
-        default "ESP32_"
+        default "myssid"
         help
             The prefix that will be used to generate the SSID of the access point.
     

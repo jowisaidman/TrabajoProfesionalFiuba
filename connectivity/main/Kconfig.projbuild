@@ -1,0 +1,8 @@
+menu "ESP Node Configuration"
+
+config CONFIG_IS_ROOT_NODE
+    bool "Is root node"
+    default false
+    help
+        Boolean indicating if the ESP is the root node
+endmenu

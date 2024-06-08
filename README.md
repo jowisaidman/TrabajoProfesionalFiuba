@@ -46,13 +46,46 @@ Buildear el proyecto, dentro de connectivity:
 idf.py build
 ```
 
-## Configuracion
+## IDF Comandos
 
-Una vez realizada la instalacion podemos configurar el AP y station usando:
+Una vez realizada la instalacion podemos utilizar distintos comandos de IDF dentro de connectivity el AP y station usando:
 
 ```
 idf.py menuconfig build
 ```
+
+Para eliminar todo lo que esta instalado en el ESP:
+
+```
+idf.py fullclean build
+```
+
+Para buildear el binario:
+
+```
+idf.py build
+```
+
+Para flashear el binario al ESP y monitorearlo, para dejar de monitorear `ctr+}`:
+
+```
+idf.py -p <port> flash monitor
+```
+
+Para eliminar lo que se cargo en el esp:
+
+```
+idf.py -p /dev/cu.usbserial-0001 erase-flash
+```
+
+### Serializar comandos:
+
+Los comandos se pueden serializar, podemos tirar:
+
+```
+idf.py -p /dev/cu.usbserial-0001 build flash monitor
+```
+
 
 ## Utils
 

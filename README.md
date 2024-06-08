@@ -45,3 +45,19 @@ Buildear el proyecto, dentro de connectivity:
 ```
 idf.py build
 ```
+
+## Configuracion
+
+Una vez realizada la instalacion podemos configurar el AP y station usando:
+
+```
+idf.py menuconfig build
+```
+
+## Utils
+
+Para ver los dispositivos conectados a la compu por bluetooth y puertos:
+
+```
+ll /dev/cu.*
+```

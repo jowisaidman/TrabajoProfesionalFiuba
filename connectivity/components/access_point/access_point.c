@@ -7,9 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
-#include "access_point.h"
 
-#include <string.h>
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -21,6 +19,9 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
+
+#include <string.h>
+#include "access_point.h"
 
 /* The examples use WiFi configuration that you can set via project configuration menu.
 
@@ -54,8 +55,7 @@ struct access_point_t {
 
 static const char *payload = "Message from ESP32 ";
 
-static void wifi_event_handler(void *arg, esp_event_base_t event_base,
-                               int32_t event_id, void *event_data) {
+void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
     ESP_LOGI(TAG, "station " MACSTR " join, AID=%d",

@@ -1,4 +1,3 @@
-
 /*
 * @brief Event handler for WiFi events in AP mode
 * @param arg system event data

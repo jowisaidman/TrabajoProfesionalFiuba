@@ -72,7 +72,7 @@ Para flashear el binario al ESP y monitorearlo, para dejar de monitorear `ctr+}`
 idf.py -p <port> flash monitor
 ```
 
-Por ejemplo: idf.py -p `/dev/cu.usbserial-0001` flash monitor
+Por ejemplo: `idf.py -p /dev/cu.usbserial-0001 flash monitor`
 
 Para eliminar lo que se cargo en el esp:
 

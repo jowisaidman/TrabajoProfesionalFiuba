@@ -14,7 +14,7 @@
 #include "access_point.h"
 #include "station.h"
 
-#define WIFI_NETWORK_PREFIX "myssid"
+#define DEVICE_WIFI_NETWORK_PREFIX "myssid"
 #define DEVICE_IS_ROOT_NODE false //TODO: move to env variable
 #define DEVICE_ORIENTATION 0
 #define DEVICE_UUID "1112"
@@ -34,7 +34,7 @@ void app_main(void) {
     init_station_mode();
 
     while (true) {
-      struct wifi_ap_record_t_owned record = discover_wifi_ap(WIFI_NETWORK_PREFIX, DEVICE_ORIENTATION, DEVICE_UUID);
+      struct wifi_ap_record_t_owned record = discover_wifi_ap(DEVICE_WIFI_NETWORK_PREFIX, DEVICE_ORIENTATION, DEVICE_UUID);
       if(record.found) {
         wifi_config_t wifi_config = {};
         strcpy((char *)wifi_config.sta.ssid, (const char *)record.ap_info.ssid);

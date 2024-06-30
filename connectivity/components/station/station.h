@@ -1,3 +1,8 @@
+struct wifi_ap_record_t_owned {
+  wifi_ap_record_t ap_info;
+  bool found;
+};
+
 /*
  * @brief Initialize the WiFi stack in station mode
  */
@@ -6,9 +11,10 @@ void init_station_mode();
  * @brief Discover the AP with the name like 'ESP_' and return the AP
  * information to connect
  * @param wifi_ssid_like The name of the AP to discover
- * @return wifi_ap_record_t The AP information to connect
+ * @param orientation is where the node is looking at
+ * @return uint_8_t The SSID of the AP to connect
  */
-wifi_ap_record_t discover_wifi_ap(const char* wifi_ssid_like);
+struct wifi_ap_record_t_owned discover_wifi_ap(const char* wifi_ssid_like, uint16_t orientation, char* device_uuid);
 
 /*
 * @brief Event handler for WiFi events for station mode

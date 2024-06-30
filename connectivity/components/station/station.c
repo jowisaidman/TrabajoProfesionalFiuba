@@ -28,6 +28,9 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT BIT1
 #define PORT 3333
 
+static const uint16_t SOUTH_NORTH_CHANNELS[] = {1, 3, 5, 7, 9, 11, 13};
+static const uint16_t EAST_WEST_CHANNELS[] = {2, 4, 6, 8, 10, 12};
+
 static const char* TAG = "station";
 
 static int s_retry_num = 0;
@@ -70,13 +73,39 @@ void init_station_mode() {
                                                       &instance_got_ip));
 }
 
+bool is_in_list(uint16_t number, const uint16_t list[]) {
+  int size = sizeof(list) / sizeof(list[0]);
+  for (int i = 0; i < size; i++) {
+      if (list[i] == number) {
+        return true;
+      }
+  }
+  return false;
+}
+
+bool is_channel_allowed(uint16_t orientation, uint16_t channel) {
+  if (orientation == 0 || orientation == 1) {
+    return is_in_list(channel, SOUTH_NORTH_CHANNELS);
+  } else if (orientation == 2 || orientation == 3) {
+    return is_in_list(channel, EAST_WEST_CHANNELS);
+  } else {
+    ESP_LOGE(TAG, "Error: wrong orientation configuration %u ", orientation);
+    return false; //TODO: levantar exception?
+  }
+}
+
+bool is_network_allowed(char* device_uuid, char* network_prefix, char* network_name) {
+  return ((strstr(network_name, network_prefix) != NULL) && (strstr(network_name, device_uuid) == NULL));
+}
+
 /*
  * @brief Discover the AP with the name like 'ESP_' and return the AP
  * information to connect
  * @param wifi_ssid_like The name of the AP to discover
- * @return wifi_ap_record_t The AP information to connect
+ * @param orientation is where the node is looking at
+ * @return uint_8_t The SSID of the AP to connect
  */
-wifi_ap_record_t discover_wifi_ap(const char* wifi_ssid_like) {
+struct wifi_ap_record_t_owned discover_wifi_ap(const char* wifi_ssid_like, uint16_t orientation, char* device_uuid) {
   uint16_t number = DEFAULT_SCAN_LIST_SIZE;
   wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
   uint16_t ap_count = 0;
@@ -88,19 +117,36 @@ wifi_ap_record_t discover_wifi_ap(const char* wifi_ssid_like) {
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
   ESP_LOGI(TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u",
            ap_count, number);
-  uint16_t index_ap = 0;
-  for (int i = 0; i < number; i++) {
-    // Find the AP with the name like 'ESP_'
-    if (strstr((const char*)ap_info[i].ssid, wifi_ssid_like) != NULL) {
-      index_ap = i;
-      ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
-      ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
-      ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
-    }
+  
+  uint16_t networks_to_scan;
+  if (ap_count > number) {
+    networks_to_scan = number;
+  } else {
+    networks_to_scan = ap_count;
   }
 
-  return (wifi_ap_record_t)ap_info[index_ap];
+  struct wifi_ap_record_t_owned wifi_record;
+  memset(&wifi_record, 0, sizeof(struct wifi_ap_record_t_owned));
+  wifi_record.found = false;
+
+  for (int i = 0; i < networks_to_scan; i++) {
+    // Verificamos el prefix de la red
+    if (is_network_allowed(device_uuid, wifi_ssid_like, (char*)ap_info[i].ssid)) {
+      uint16_t channel = ap_info[i].primary;
+      if (is_channel_allowed(orientation, channel)) {
+        ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
+        ESP_LOGI(TAG, "Index \t\t%u", i);
+        memcpy(&wifi_record, &ap_info[i], sizeof(ap_info[i]));
+        wifi_record.found = true;
+        break;
+      }
+    }
+  }
+  return wifi_record;
 }
+
 
 /*
  * @brief Event handler for WiFi events for station mode

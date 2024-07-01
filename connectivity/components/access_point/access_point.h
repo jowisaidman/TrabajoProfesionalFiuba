@@ -11,4 +11,4 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
 /*
  * @brief Initialize the WiFi in AP mode
  */
-void wifi_init_softap(void);
+void ac_init(uint8_t channel, const char *device_uuid);

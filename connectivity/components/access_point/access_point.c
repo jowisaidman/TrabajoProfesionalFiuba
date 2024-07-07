@@ -7,6 +7,8 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+
+
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -52,7 +54,7 @@ struct access_point_t {
 
 #define PORT 3333
 
-static const char *payload = "Message from ESP32 ";
+// static const char *payload = "Message from ESP32 ";
 
 void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
@@ -68,22 +70,19 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
   }
 }
 
-void wifi_init_softap(void) {
+void ac_init(uint8_t channel, const char *device_uuid) {
   struct access_point_t ap;
+  wifi_config_t wifi_config;
   memset(&ap, 0, sizeof(ap));
-  wifi_config_t wifi_config = {
-      .ap = {
-          .ssid = EXAMPLE_ESP_WIFI_SSID,
-          .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
-          .channel = EXAMPLE_ESP_WIFI_CHANNEL,
-          .authmode = WIFI_AUTH_OPEN,
-          .max_connection = EXAMPLE_MAX_STA_CONN,
-          .pmf_cfg = {
-              .required = true,
-          },
+  memset(&wifi_config, 0, sizeof(wifi_config));
 
-      },
-  };
+  memcpy(wifi_config.ap.ssid, device_uuid, strlen(device_uuid));
+  size_t size_ssid = strlen(device_uuid);
+  memcpy(&wifi_config.ap.ssid_len, &size_ssid, sizeof(size_ssid));
+  wifi_config.ap.channel = channel;
+  wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+  wifi_config.ap.max_connection = EXAMPLE_MAX_STA_CONN;
+
 
   memcpy(&ap.wifi_config, &wifi_config, sizeof(wifi_config));
 
@@ -112,6 +111,6 @@ void wifi_init_softap(void) {
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &(ap.wifi_config)));
   ESP_ERROR_CHECK(esp_wifi_start());
 
-  ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
-           EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS, EXAMPLE_ESP_WIFI_CHANNEL);
+  ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s channel:%d",
+           ap.wifi_config.ap.ssid, ap.wifi_config.ap.channel);
 }

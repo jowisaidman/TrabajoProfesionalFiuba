@@ -9,6 +9,7 @@
 
 
 
+#include "../server/server.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mac.h"
@@ -20,17 +21,17 @@
 #include "freertos/task.h"
 #include "nvs_flash.h"
 
-#include <string.h>
 #include "access_point.h"
-#include "../server/server.h"
+
+#include <string.h>
 
 /* The examples use WiFi configuration that you can set via project configuration menu.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
 */
-#define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
-#define EXAMPLE_ESP_WIFI_PASS ""
+#define EXAMPLE_ESP_WIFI_SSID "tpp_0001"
+#define EXAMPLE_ESP_WIFI_PASS "password"
 #define EXAMPLE_ESP_WIFI_CHANNEL CONFIG_ESP_WIFI_CHANNEL
 #define EXAMPLE_MAX_STA_CONN 1
 
@@ -70,21 +71,13 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
   }
 }
 
-void ac_init(uint8_t channel, const char *device_uuid) {
-  struct access_point_t ap;
-  wifi_config_t wifi_config;
-  memset(&ap, 0, sizeof(ap));
-  memset(&wifi_config, 0, sizeof(wifi_config));
-
-  memcpy(wifi_config.ap.ssid, device_uuid, strlen(device_uuid));
-  size_t size_ssid = strlen(device_uuid);
-  memcpy(&wifi_config.ap.ssid_len, &size_ssid, sizeof(size_ssid));
-  wifi_config.ap.channel = channel;
-  wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-  wifi_config.ap.max_connection = EXAMPLE_MAX_STA_CONN;
-
-
-  memcpy(&ap.wifi_config, &wifi_config, sizeof(wifi_config));
+void ap_init(uint8_t channel, const char *wifi_network_prefix, const char *device_uuid, const char *password) {
+  // Generate the wifi ssid
+  char wifi_ssid[32];
+  memset(wifi_ssid, 0, sizeof(wifi_ssid));
+  strcpy(wifi_ssid, wifi_network_prefix);
+  strcat(wifi_ssid, "_");
+  strcat(wifi_ssid, device_uuid);
 
   ESP_ERROR_CHECK(esp_netif_init());
   ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -94,23 +87,38 @@ void ac_init(uint8_t channel, const char *device_uuid) {
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
   esp_event_handler_instance_t instance_any_id;
-  esp_event_handler_instance_t instance_got_ip;
   ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                       ESP_EVENT_ANY_ID,
                                                       &wifi_event_handler,
                                                       NULL,
                                                       &instance_any_id));
 
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                      IP_EVENT_AP_STAIPASSIGNED,
-                                                      &wifi_event_handler,
-                                                      NULL,
-                                                      &instance_got_ip));
+  wifi_config_t wifi_config = {
+      .ap = {
+          .ssid = EXAMPLE_ESP_WIFI_SSID,
+          .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
+          .channel = EXAMPLE_ESP_WIFI_CHANNEL,
+          .password = EXAMPLE_ESP_WIFI_PASS,
+          .max_connection = EXAMPLE_MAX_STA_CONN,
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT
+          .authmode = WIFI_AUTH_WPA3_PSK,
+          .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+#else /* CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT */
+          .authmode = WIFI_AUTH_WPA2_PSK,
+#endif
+          .pmf_cfg = {
+              .required = true,
+          },
+      },
+  };
+  if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
+    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+  }
 
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &(ap.wifi_config)));
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
   ESP_ERROR_CHECK(esp_wifi_start());
 
-  ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s channel:%d",
-           ap.wifi_config.ap.ssid, ap.wifi_config.ap.channel);
+  ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
+           EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS, EXAMPLE_ESP_WIFI_CHANNEL);
 }

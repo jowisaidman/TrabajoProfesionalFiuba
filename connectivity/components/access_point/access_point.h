@@ -30,16 +30,7 @@ void ap_set_base_wifi_default_config(AccessPointPtr ap);
 void ap_set_channel(AccessPointPtr ap, uint8_t channel);
 void ap_set_ssid(AccessPointPtr ap, const char *ssid);
 void ap_set_password(AccessPointPtr ap, const char *password);
-void ap_update(AccessPointPtr ap, bool restart);
+void ap_update(AccessPointPtr ap);
 void ap_activate(AccessPointPtr ap);
 void ap_deactivate(AccessPointPtr ap);
 void ap_restart(AccessPointPtr ap);
-
-/*
- * @brief Event handler for WiFi events in AP mode
- * @param arg system event data
- * @param event_base event base
- * @param event_id event id
- * @param event_data event data
- */
-static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);

@@ -9,10 +9,9 @@
 
 
 
-#include "../server/server.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_mac.h"
+#include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -21,50 +20,11 @@
 #include "nvs_flash.h"
 
 #include "access_point.h"
+// #include "../server/server.h"
 
 #include <string.h>
 
-/* The examples use WiFi configuration that you can set via project configuration menu.
-
-   If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
-*/
-#define EXAMPLE_MAX_STA_CONN 1
-
-static const char *TAG = "SoftAP";
-
-
-
-#ifdef CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN
-#include "addr_from_stdin.h"
-#endif
-
-#if defined(CONFIG_EXAMPLE_IPV4)
-#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
-#elif defined(CONFIG_EXAMPLE_IPV6)
-#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV6_ADDR
-#else
-#define HOST_IP_ADDR ""
-#endif
-
-#define PORT 3333
-
-// static const char *payload = "Message from ESP32 ";
-
-
-void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-  if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
-    ESP_LOGI(TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-    ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
-    ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
-    ESP_LOGI(TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
-    create_server();
-  }
-}
+static const char *TAG = "AP";
 
 void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn) {
   // Populate the Access Point wifi_config_t 
@@ -79,17 +39,6 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
     ap->wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
   }
   ap->wifi_config.ap.pmf_cfg.required = true;
-
-  esp_event_handler_instance_t instance_any_id;
-  ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                      ESP_EVENT_ANY_ID,
-                                                      &wifi_event_handler,
-                                                      NULL,
-                                                      &instance_any_id));
-
-  // Print info of ap->wifi_config
-  ap_print_info(ap);
-  
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
 }
 
@@ -101,8 +50,6 @@ void ap_print_info(AccessPointPtr ap) {
   ESP_LOGI(TAG, "wifi_config.ap.ssid_len: %d", ap->wifi_config.ap.ssid_len);
   ESP_LOGI(TAG, "wifi_config.ap.password: %s", ap->wifi_config.ap.password);
 }
-
-void ap_set_base_wifi_default_config(AccessPointPtr ap) {};
 
 void ap_set_channel(AccessPointPtr ap, uint8_t channel) {
   ap->wifi_config.ap.channel = channel;
@@ -118,8 +65,10 @@ void ap_set_password(AccessPointPtr ap, const char *password){
   strcpy((char *)ap->wifi_config.ap.password, password);
 };
 
-void ap_update(AccessPointPtr ap, bool restart) {
-  ap_deactivate(ap);
+void ap_update(AccessPointPtr ap) {
+  if (ap->state == active) {
+    ap_deactivate(ap);
+  }
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   ap_activate(ap);
 };

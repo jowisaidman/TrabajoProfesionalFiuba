@@ -70,7 +70,6 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -96,7 +95,7 @@ void app_main(void) {
     strcat(wifi_ssid, DEVICE_UUID);
 
     ap_init(ap_ptr, SOFTAP_CHANNEL_TO_EMIT, wifi_ssid, DEVICE_WIFI_NETWORK_PASSWORD, SOFTAP_MAX_STA_CONNECTIONS);
-    ap_activate(ap_ptr);
+    ap_start(ap_ptr);
     sleep(20);
     ap_set_ssid(ap_ptr, "tpp_0003");
     ap_update(ap_ptr);

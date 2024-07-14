@@ -1,14 +1,3 @@
-/*  WiFi softAP Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-
-
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_event.h"
@@ -39,7 +28,17 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
     ap->wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
   }
   ap->wifi_config.ap.pmf_cfg.required = true;
+  esp_netif_create_default_wifi_ap();
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
+  ap->initialized = true;
+}
+
+bool ap_is_initialized(AccessPointPtr ap) {
+  return ap->initialized;
+}
+
+bool ap_is_active(AccessPointPtr ap) {
+  return ap->state == active;
 }
 
 void ap_print_info(AccessPointPtr ap) {
@@ -67,24 +66,24 @@ void ap_set_password(AccessPointPtr ap, const char *password){
 
 void ap_update(AccessPointPtr ap) {
   if (ap->state == active) {
-    ap_deactivate(ap);
+    ap_stop(ap);
   }
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
-  ap_activate(ap);
+  ap_start(ap);
 };
 
-void ap_activate(AccessPointPtr ap) {
+void ap_start(AccessPointPtr ap) {
   ap->state = active;
   ESP_ERROR_CHECK(esp_wifi_start());
 };
 
-void ap_deactivate(AccessPointPtr ap){
+void ap_stop(AccessPointPtr ap){
   ESP_LOGI(TAG, "Stoping AP");
   ap->state = inactive;
   ESP_ERROR_CHECK(esp_wifi_stop());
 };
 
 void ap_restart(AccessPointPtr ap) {
-  ap_deactivate(ap);
-  ap_activate(ap);
+  ap_stop(ap);
+  ap_start(ap);
 };

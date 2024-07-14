@@ -1,12 +1,33 @@
+#include "esp_wifi.h"
+#include "esp_mac.h"
+
 struct wifi_ap_record_t_owned {
   wifi_ap_record_t ap_info;
   bool found;
 };
 
-/*
- * @brief Initialize the WiFi stack in station mode
- */
-void init_station_mode();
+typedef struct wifi_ap_record_t_owned wifi_ap_record_t_owned;
+
+typedef enum {
+  s_active,
+  s_inactive
+} Station_State;
+
+struct Station {
+  // Members
+  Station_State state;
+  wifi_config_t wifi_config;
+  wifi_ap_record_t_owned wifi_ap_record;
+};
+
+typedef struct Station Station;
+typedef struct Station* StationPtr;
+
+void station_init(StationPtr stationPtr);
+void station_start(StationPtr stationPtr);
+void station_stop(StationPtr stationPtr);
+void station_restart(StationPtr stationPtr);
+
 /*
  * @brief Discover the AP with the name like 'ESP_' and return the AP
  * information to connect
@@ -15,6 +36,12 @@ void init_station_mode();
  * @return uint_8_t The SSID of the AP to connect
  */
 struct wifi_ap_record_t_owned discover_wifi_ap(const char* wifi_ssid_like, uint16_t orientation, char* device_uuid);
+
+/*
+ * @brief Initialize the WiFi stack in station mode
+ */
+void init_station_mode();
+
 
 /*
 * @brief Event handler for WiFi events for station mode
@@ -37,3 +64,4 @@ void connect_to_wifi(wifi_config_t wifi_config);
  * @brief Wait until the connection is established
  */
 void wait_connection_established();
+

@@ -1,10 +1,10 @@
 #include <lwip/netdb.h>
-#include <string.h>
 
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_netif.h"
 #include "esp_wifi.h"
+#include "esp_mac.h"
+#include "esp_netif.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "lwip/err.h"
@@ -13,6 +13,7 @@
 #include "nvs_flash.h"
 
 #include "station.h"
+#include <string.h>
 // #include "../tcp_client/tcp_client.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
@@ -36,6 +37,41 @@ static int s_retry_num = 0;
 /*
  * @brief Initialize the WiFi stack in station mode
  */
+void station_init(StationPtr stationPtr) {
+  s_wifi_event_group = xEventGroupCreate();
+
+  // Initialize NVS
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
+  ESP_ERROR_CHECK(esp_netif_init());
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+  esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+  assert(sta_netif);
+
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+  ESP_ERROR_CHECK(esp_wifi_start());
+
+  // esp_event_handler_instance_t instance_any_id;
+  // esp_event_handler_instance_t instance_got_ip;
+  // ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+  //                                                     ESP_EVENT_ANY_ID,
+  //                                                     &event_handler,
+  //                                                     NULL,
+  //                                                     &instance_any_id));
+  // ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+  //                                                     IP_EVENT_STA_GOT_IP,
+  //                                                     &event_handler,
+  //                                                     NULL,
+  //                                                     &instance_got_ip));
+}
+
 void init_station_mode() {
   s_wifi_event_group = xEventGroupCreate();
 
@@ -183,6 +219,13 @@ static void event_handler(void* arg, esp_event_base_t event_base,
   }
 }
 
+void station_start(StationPtr stationPtr) {
+  ESP_LOGI(TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
+  stationPtr->state = s_active;
+  ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
+  ESP_ERROR_CHECK(esp_wifi_connect());
+}
+
 /*
  * @brief Connect to the AP with the given SSID and password
  * @param ssid The SSID of the AP to connect
@@ -192,6 +235,16 @@ void connect_to_wifi(wifi_config_t wifi_config) {
   ESP_LOGI(TAG, "Connecting to %s...", wifi_config.sta.ssid);
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
   ESP_ERROR_CHECK(esp_wifi_connect());
+}
+
+void station_stop(StationPtr stationPtr) {
+  stationPtr->state = s_inactive;
+  ESP_ERROR_CHECK(esp_wifi_disconnect());
+}
+
+void station_restart(StationPtr stationPtr) {
+  station_stop(stationPtr);
+  station_start(stationPtr);
 }
 
 /*

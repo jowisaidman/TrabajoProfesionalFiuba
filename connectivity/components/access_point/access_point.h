@@ -16,6 +16,7 @@ struct AccessPoint {
   char ssid[32];
   char password[64];
   uint8_t channel;
+  bool initialized;
   AccessPoint_State state;
   wifi_config_t wifi_config;
 };
@@ -26,11 +27,12 @@ typedef struct AccessPoint* AccessPointPtr;
 // Methods
 void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid , const char *wifi_password, uint8_t wifi_max_sta_conn);
 void ap_print_info(AccessPointPtr ap);
-void ap_set_base_wifi_default_config(AccessPointPtr ap);
+bool ap_is_initialized(AccessPointPtr ap);
+bool ap_is_active(AccessPointPtr ap);
 void ap_set_channel(AccessPointPtr ap, uint8_t channel);
 void ap_set_ssid(AccessPointPtr ap, const char *ssid);
 void ap_set_password(AccessPointPtr ap, const char *password);
 void ap_update(AccessPointPtr ap);
-void ap_activate(AccessPointPtr ap);
-void ap_deactivate(AccessPointPtr ap);
+void ap_start(AccessPointPtr ap);
+void ap_stop(AccessPointPtr ap);
 void ap_restart(AccessPointPtr ap);

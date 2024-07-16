@@ -1,6 +1,7 @@
 #include "esp_wifi.h"
 
 #include "../access_point/access_point.h"
+#include "../station/station.h"
 
 /*
 * State enum to manage the state of the Access Point
@@ -31,7 +32,8 @@ struct Device {
   uint8_t channel;
   Device_Mode mode;
   Device_State state;
-  AccessPoint access_point;
+  AccessPointPtr access_point_ptr;
+  StationPtr station_ptr;
 };
 
 typedef struct Device Device;

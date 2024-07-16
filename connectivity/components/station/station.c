@@ -37,39 +37,19 @@ static int s_retry_num = 0;
 /*
  * @brief Initialize the WiFi stack in station mode
  */
-void station_init(StationPtr stationPtr) {
+void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password) {
   s_wifi_event_group = xEventGroupCreate();
 
-  // Initialize NVS
-  esp_err_t ret = nvs_flash_init();
-  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    ret = nvs_flash_init();
-  }
-  ESP_ERROR_CHECK(ret);
+  strcpy(stationPtr->ssid_like, wifi_ssid_like);
+  strcpy(stationPtr->device_uuid, device_uuid);
+  strcpy(stationPtr->password, password);
+  stationPtr->device_orientation = orientation;
+  stationPtr->initialized = true;
 
-  ESP_ERROR_CHECK(esp_netif_init());
-  ESP_ERROR_CHECK(esp_event_loop_create_default());
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
-
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
   ESP_ERROR_CHECK(esp_wifi_start());
-
-  // esp_event_handler_instance_t instance_any_id;
-  // esp_event_handler_instance_t instance_got_ip;
-  // ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-  //                                                     ESP_EVENT_ANY_ID,
-  //                                                     &event_handler,
-  //                                                     NULL,
-  //                                                     &instance_any_id));
-  // ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-  //                                                     IP_EVENT_STA_GOT_IP,
-  //                                                     &event_handler,
-  //                                                     NULL,
-  //                                                     &instance_got_ip));
 }
 
 void init_station_mode() {
@@ -180,6 +160,48 @@ struct wifi_ap_record_t_owned discover_wifi_ap(const char* wifi_ssid_like, uint1
   return wifi_record;
 }
 
+void station_find_ap(StationPtr stationPtr) {
+  uint16_t number = DEFAULT_SCAN_LIST_SIZE;
+  wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
+  uint16_t ap_count = 0;
+  memset(ap_info, 0, sizeof(ap_info));
+
+  esp_wifi_scan_start(NULL, true);
+  ESP_LOGI(TAG, "Max AP number ap_info can hold = %u", number);
+  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
+  ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
+  ESP_LOGI(TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
+  
+  uint16_t networks_to_scan;
+  if (ap_count > number) {
+    networks_to_scan = number;
+  } else {
+    networks_to_scan = ap_count;
+  }
+
+  for (int i = 0; i < networks_to_scan; i++) {
+    // Verificamos el prefix de la red
+    if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid)) {
+      uint16_t channel = ap_info[i].primary;
+      if (is_channel_allowed(stationPtr->device_orientation, channel)) {
+        ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
+        ESP_LOGI(TAG, "Index \t\t%u", i);
+        memcpy(&stationPtr->wifi_ap_found, &ap_info[i], sizeof(ap_info[i]));
+        stationPtr->ap_found = true;
+        break;
+      }
+    }
+  }
+
+  if (!stationPtr->ap_found) {
+    ESP_LOGI(TAG, "No AP found");
+  } else {
+    ESP_LOGI(TAG, "AP found");
+    transform_wifi_ap_record_to_config(stationPtr);
+  }
+}
 
 /*
  * @brief Event handler for WiFi events for station mode
@@ -221,9 +243,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
 void station_start(StationPtr stationPtr) {
   ESP_LOGI(TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
-  stationPtr->state = s_active;
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_wifi_connect());
+  stationPtr->state = s_active;
 }
 
 /*
@@ -245,6 +267,25 @@ void station_stop(StationPtr stationPtr) {
 void station_restart(StationPtr stationPtr) {
   station_stop(stationPtr);
   station_start(stationPtr);
+}
+
+bool station_is_initialized(StationPtr stationPtr) {
+  return stationPtr->initialized;
+}
+
+bool station_is_active(StationPtr stationPtr) {
+  return stationPtr->state == s_active;
+}
+
+bool station_found_ap(StationPtr stationPtr) {
+  return stationPtr->ap_found;
+};
+
+void transform_wifi_ap_record_to_config(StationPtr stationPtr) {
+  memcpy(stationPtr->wifi_config.sta.ssid, stationPtr->wifi_ap_found.ssid, sizeof(stationPtr->wifi_ap_found.ssid));
+  memcpy(stationPtr->wifi_config.sta.bssid, stationPtr->wifi_ap_found.bssid, sizeof(stationPtr->wifi_ap_found.bssid));
+  memcpy(stationPtr->wifi_config.sta.password, stationPtr->password, sizeof(stationPtr->password));
+  stationPtr->wifi_config.sta.bssid_set = true;
 }
 
 /*

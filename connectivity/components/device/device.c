@@ -40,7 +40,7 @@ void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_netw
   strcat(wifi_ssid, "_");
   strcat(wifi_ssid, device_uuid);
 
-  ap_init(&device_ptr->access_point, channel, wifi_ssid, password, max_sta_connections);
+  ap_init(device_ptr->access_point_ptr, channel, wifi_ssid, password, max_sta_connections);
 };
 
 void device_reset(DevicePtr device_ptr) {
@@ -75,9 +75,11 @@ void device_set_mode(DevicePtr device_ptr, Device_Mode mode) {
   // }
 }
 
+// AP
+
 void device_start_ap(DevicePtr device_ptr) {
-  if (ap_is_initialized(&device_ptr->access_point)) {
-    ap_start(&device_ptr->access_point);
+  if (ap_is_initialized(device_ptr->access_point_ptr)) {
+    ap_start(device_ptr->access_point_ptr);
     device_ptr->state = d_active;
   } else {
     ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
@@ -85,11 +87,30 @@ void device_start_ap(DevicePtr device_ptr) {
 };
 
 void device_stop_ap(DevicePtr device_ptr) {
-  // if (device_ptr->state == d_active && device_ptr->mode == ap && ap_is_active(&device_ptr->access_point)) {
+  // if (device_ptr->state == d_active && device_ptr->mode == ap && ap_is_active(&device_ptr->access_point_ptr)) {
   // }
-  ap_stop(&device_ptr->access_point);
+  ap_stop(device_ptr->access_point_ptr);
 };
 
 void device_restart_ap(DevicePtr device_ptr) {
-  ap_restart(&device_ptr->access_point);
+  ap_restart(device_ptr->access_point_ptr);
+};
+
+// Station
+
+void device_start_station(DevicePtr device_ptr) {
+  if (ap_is_initialized(device_ptr->access_point_ptr)) {
+    station_start(device_ptr->station_ptr);
+    device_ptr->state = d_active;
+  } else {
+    ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
+  }
+};
+
+void device_stop_station(DevicePtr device_ptr) {
+  station_stop(device_ptr->station_ptr);
+};
+
+void device_restart_station(DevicePtr device_ptr) {
+  station_restart(device_ptr->station_ptr);
 };

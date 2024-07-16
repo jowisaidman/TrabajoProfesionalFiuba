@@ -15,7 +15,7 @@
 #include "lwip/sys.h"
 #include "nvs_flash.h"
 
-#include "station.h"
+// #include "station.h"
 // #include "access_point.h"
 #include "device.h"
 
@@ -48,6 +48,8 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
 }
 
 
+
+
 void app_main(void) {
   ESP_LOGI(LOGGING_TAG, "Device UUID: %s", DEVICE_UUID);
   ESP_LOGI(LOGGING_TAG, "Device orientation: %d", DEVICE_ORIENTATION);
@@ -55,25 +57,25 @@ void app_main(void) {
   ESP_LOGI(LOGGING_TAG, "Device initial mode: %d", DEVICE_INITIAL_MODE);
   ESP_LOGI(LOGGING_TAG, "Device wifi network prefix: %s", DEVICE_WIFI_NETWORK_PREFIX);
 
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
+
+  ESP_ERROR_CHECK(esp_netif_init());
+  ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+  ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
   if (DEVICE_INITIAL_MODE == 0) {
     ESP_LOGI(LOGGING_TAG, "ESP on AP mode");
-
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
+    
     AccessPoint ap = {};
     AccessPointPtr ap_ptr = &ap;
-
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
 
     esp_event_handler_instance_t instance_any_id;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
@@ -82,9 +84,7 @@ void app_main(void) {
                                                         NULL,
                                                         &instance_any_id));
 
-
     // Print info of ap->wifi_config
-
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
 
     // Generate the wifi ssid
@@ -101,17 +101,18 @@ void app_main(void) {
     ap_update(ap_ptr);
   } else if (DEVICE_INITIAL_MODE == 1) {
     ESP_LOGI(LOGGING_TAG, "ESP on STA mode");
-    init_station_mode();
+
+    Station station = {};
+    StationPtr station_ptr = &station;
+
+    station_init(station_ptr, DEVICE_WIFI_NETWORK_PREFIX, DEVICE_ORIENTATION, DEVICE_UUID, DEVICE_WIFI_NETWORK_PASSWORD);
 
     while (true) {
-      struct wifi_ap_record_t_owned record = discover_wifi_ap(DEVICE_WIFI_NETWORK_PREFIX, DEVICE_ORIENTATION, DEVICE_UUID);
-      if (record.found) {
-        ESP_LOGI(LOGGING_TAG, "WIFI FOUND! SSID: %s. Initiating connection.", record.ap_info.ssid);
-        wifi_config_t wifi_config = {};
-        strcpy((char *)wifi_config.sta.ssid, (const char *)record.ap_info.ssid);
-        strcpy((char *)wifi_config.sta.password, DEVICE_WIFI_NETWORK_PASSWORD);
-        connect_to_wifi(wifi_config);
-
+      station_find_ap(station_ptr);
+      if (station_found_ap(station_ptr)) {
+        ESP_LOGI(LOGGING_TAG, "WIFI FOUND! Initiating connection.");
+        station_start(station_ptr);
+        
         wait_connection_established();
         break;
       } else {

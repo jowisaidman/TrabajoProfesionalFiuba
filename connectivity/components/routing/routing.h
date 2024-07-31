@@ -1,6 +1,3 @@
-#include <cstdint>
-
-
 // TODO: Chequear si vamos a tener un struct o simplemente llamamos estos metodos
 
 /// @brief Function that calls the control plane to communicate 

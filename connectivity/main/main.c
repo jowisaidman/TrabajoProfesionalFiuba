@@ -19,6 +19,9 @@
 // #include "access_point.h"
 #include "device.h"
 
+// Tests
+#include "test_shared_memory.h"
+
 /* General config */
 #define LOGGING_TAG "MAIN"
 
@@ -34,6 +37,8 @@
 #define SOFTAP_CHANNEL_TO_EMIT 3
 #define SOFTAP_MAX_STA_CONNECTIONS 1
 
+#define RUN_TESTS 1 // 1 = run tests, 0 = run app TODO: set this from config
+
 void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
@@ -47,10 +52,12 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
   }
 }
 
-
-
-
 void app_main(void) {
+  if (RUN_TESTS) {
+      test_shared_memory(1);
+      return;
+  }
+
   ESP_LOGI(LOGGING_TAG, "Device UUID: %s", DEVICE_UUID);
   ESP_LOGI(LOGGING_TAG, "Device orientation: %d", DEVICE_ORIENTATION);
   ESP_LOGI(LOGGING_TAG, "Device is root node: %d", DEVICE_IS_ROOT_NODE);

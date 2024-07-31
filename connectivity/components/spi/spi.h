@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <stdbool.h>
 
 /// @brief Reliably broadcasts a message to all sibling devices in the node. 
 /// @param msg Message to broadcast. Maximum message size: 512 bytes.

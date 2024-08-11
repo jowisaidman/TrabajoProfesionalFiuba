@@ -91,7 +91,7 @@ idf.py -p /dev/cu.usbserial-0001 build flash monitor
 
 ## Utils
 
-Para ver los dispositivos conectados a la compu por bluetooth y puertos:
+Para ver los dispositivos conectados a la pc por bluetooth y puertos:
 
 ```
 ll /dev/cu.*

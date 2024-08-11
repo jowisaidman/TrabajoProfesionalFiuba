@@ -3,3 +3,5 @@ examples/
 esp-idf/
 .DS_Store
 .vscode/
+
+/connectivity/tests

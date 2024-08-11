@@ -57,3 +57,6 @@ void device_restart_station(DevicePtr device_ptr);
 // void device_stop_tcp_server(DevicePtr device_ptr);
 // void device_restart_tcp_server(DevicePtr device_ptr);
 // void device_handle_message(DevicePtr device_ptr);
+
+// Quiza podemos agregar un flag para saber a quien va el mensaje
+// Aca tendriamos el handle message y llamamos al station 

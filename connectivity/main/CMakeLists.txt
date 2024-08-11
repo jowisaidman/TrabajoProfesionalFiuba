@@ -15,7 +15,7 @@ set(MAIN_REQUIRES
     shared_memory
     spi
     station
-    tcp_client
+    client
     token_ring
 )
 

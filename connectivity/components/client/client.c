@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include "esp_netif.h"
 #include "esp_log.h"
-#include "tcp_client.h"
+#include "client.h"
 #if defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
 #include "addr_from_stdin.h"
 #endif
@@ -23,7 +23,7 @@ static const char *TAG = "example";
 static const char *payload = "Message from ESP32 ";
 
 
-void tcp_client(const char* ip)
+void client(const char* ip)
 {
     char rx_buffer[128];
     char host_ip[] = "192.168.4.1";

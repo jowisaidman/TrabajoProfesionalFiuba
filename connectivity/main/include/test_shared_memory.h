@@ -11,7 +11,7 @@
 #include "shared_memory.h"
 //#include "spi.h"
 //#include "station.h"
-//#include "tcp_client.h"
+//#include "client.h"
 //#include "token_ring.h"
 
 void test_shared_memory(int activate);

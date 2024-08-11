@@ -14,7 +14,7 @@
 
 #include "station.h"
 #include <string.h>
-// #include "../tcp_client/tcp_client.h"
+// #include "../client/client.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
 #define EXAMPLE_ESP_MAXIMUM_RETRY 10
@@ -48,8 +48,6 @@ void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t or
 
   esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
   assert(sta_netif);
-  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-  ESP_ERROR_CHECK(esp_wifi_start());
 }
 
 void init_station_mode() {
@@ -234,7 +232,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
     ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
     ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    // tcp_client(inet_ntoa(ip_info.gw));
+    // client(inet_ntoa(ip_info.gw));
     s_retry_num = 0;
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
@@ -242,6 +240,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 }
 
 void station_start(StationPtr stationPtr) {
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+  ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+void station_connect(StationPtr stationPtr) {
   ESP_LOGI(TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_wifi_connect());
@@ -259,13 +262,13 @@ void connect_to_wifi(wifi_config_t wifi_config) {
   ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
-void station_stop(StationPtr stationPtr) {
+void station_disconnect(StationPtr stationPtr) {
   stationPtr->state = s_inactive;
   ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
 
 void station_restart(StationPtr stationPtr) {
-  station_stop(stationPtr);
+  station_disconnect(stationPtr);
   station_start(stationPtr);
 }
 

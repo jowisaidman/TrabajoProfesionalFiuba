@@ -29,6 +29,7 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
   }
   ap->wifi_config.ap.pmf_cfg.required = true;
   esp_netif_create_default_wifi_ap();
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
   ap->initialized = true;
 }

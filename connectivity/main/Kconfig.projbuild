@@ -1,8 +1,39 @@
 menu "ESP Node Configuration"
 
-config CONFIG_IS_ROOT_NODE
-    bool "Is root node"
-    default false
-    help
-        Boolean indicating if the ESP is the root node
+    config DEVICE_IS_ROOT_NODE
+        int "Is root node"
+        default 0
+        help
+            Boolean indicating if the ESP is the root node. 0: False, 1: True
+
+    config DEVICE_INITIAL_MODE
+        int "Initial mode"
+        default 0
+        help
+            Initial mode of the ESP. 0: Station, 1: Access Point, 2: Both
+
+    config DEVICE_ORIENTATION
+        int "Device orientation"
+        default 0
+        help
+            Orientation of the device. 0: North, 1: South, 2: East, 3: West
+
+    config DEVICE_UUID
+        string "Device UUID"
+        default "0000-0000"
+        help
+            UUID of the device
+
+    config DEVICE_WIFI_NETWORK_PREFIX
+        string "WiFi network prefix"
+        default "ESP"
+        help
+            Prefix of the WiFi network
+
+
+    config DEVICE_WIFI_NETWORK_PASSWORD
+        string "Password of the network"
+        default "password"
+        help
+            Password of the network
 endmenu

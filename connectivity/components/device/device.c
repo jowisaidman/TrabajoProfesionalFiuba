@@ -63,6 +63,10 @@ void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint1
   station_init(device_ptr->station_ptr, wifi_ssid_like, orientation, device_uuid, password);
 };
 
+void device_set_network_ap(DevicePtr device_ptr, const char *network_cidr, const char *network_gateway, const char *network_mask) {
+  ap_set_network(device_ptr->access_point_ptr, network_cidr, network_gateway, network_mask);
+};
+
 void device_reset(DevicePtr device_ptr) {
   if (device_ptr->state == d_active) {
     if (device_ptr->mode == AP) {

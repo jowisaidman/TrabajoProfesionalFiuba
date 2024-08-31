@@ -2,6 +2,7 @@
 
 #include "../access_point/access_point.h"
 #include "../station/station.h"
+#include "../token_ring/token_ring.h"
 
 /*
 * State enum to manage the state of the Access Point
@@ -59,4 +60,5 @@ void device_restart_station(DevicePtr device_ptr);
 // void device_handle_message(DevicePtr device_ptr);
 
 // Quiza podemos agregar un flag para saber a quien va el mensaje
-// Aca tendriamos el handle message y llamamos al station 
+// Aca tendriamos el handle message y llamamos al station station_find_ap
+// lo mejor seria que ellos chequeen si es para nosotros 

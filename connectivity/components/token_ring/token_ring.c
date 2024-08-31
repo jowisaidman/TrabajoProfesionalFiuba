@@ -12,18 +12,28 @@ void token_ring_init(TokenRing* token_ring, uint8_t device_id) {
     token_ring->device_id = device_id;
 }
 
-void wait_for_next_shift(TokenRing* token_ring) {
-    const uint8_t* msg = (const uint8_t*)"Hello, World!";
-    uint16_t len = 10; // TODO: change this to actual size of msg
-    on_sibling_message(&msg, len); // TODO: como parseamos el msg?
-    while (token_ring->device_id != msg) {
-        sleep(SHIFT_INTERVAL);
-        on_sibling_message(&msg, len); 
-        // TODO: parsear el mensaje para que el while compare si termina
-    }
+bool is_device_shift(TokenRing* token_ring, TokenRingMessage* message) {
+    return message->data[0] == token_ring->device_id;
 }
 
-void send_next_shift(TokenRing* token_ring) {
-    uint8_t new_shift = (token_ring->device_id + 1) % MAX_DEVICE_ID;
-    broadcast_to_siblings(new_shift, 1);
+//void send_next_shift(TokenRing* token_ring, TokenRingMessage* message, char* message_update) {
+//    if (message_update != null) {
+//        // Setear el nuevo update en el message
+//    }
+//    uint8_t new_shift_id = (token_ring->device_id + 1) % MAX_DEVICE_ID;
+//    message->device_id;
+//    broadcast_to_siblings(message, 38);
+//}
+
+void token_ring_message_init(TokenRingMessage* token_ring) {
+    memset(token_ring->data, 0, MESSAGE_LENGTH_BYTES);
+    token_ring->data[MESSAGE_LENGTH_BYTES-1] = '\0';
+}
+
+void update_token_ring_message(TokenRingMessage* message, uint16_t new_connection, uint8_t device_id) {
+    uint8_t offset = 1 + device_id * 2; // skip first byte for shift id.
+    if (offset < MESSAGE_LENGTH_BYTES - 1) {
+        message->data[offset] = (new_connection >> 8) & 0xFF;
+        message->data[offset + 1] = new_connection & 0xFF;
+    }
 }

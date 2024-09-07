@@ -19,6 +19,8 @@ struct AccessPoint {
   bool initialized;
   AccessPoint_State state;
   wifi_config_t wifi_config;
+  char network_cidr[16];
+  esp_netif_t *netif;
 };
 
 typedef struct AccessPoint AccessPoint;
@@ -36,3 +38,5 @@ void ap_update(AccessPointPtr ap);
 void ap_start(AccessPointPtr ap);
 void ap_stop(AccessPointPtr ap);
 void ap_restart(AccessPointPtr ap);
+void ap_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *network_gateway, const char *network_mask);

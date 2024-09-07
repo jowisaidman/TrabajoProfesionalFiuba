@@ -33,7 +33,8 @@ typedef struct Station* StationPtr;
 
 void station_init(StationPtr stationPtr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password);
 void station_start(StationPtr stationPtr);
-void station_stop(StationPtr stationPtr);
+void station_connect(StationPtr stationPtr);
+void station_disconnect(StationPtr stationPtr);
 void station_restart(StationPtr stationPtr);
 bool station_is_initialized(StationPtr stationPtr);
 bool station_is_active(StationPtr stationPtr);

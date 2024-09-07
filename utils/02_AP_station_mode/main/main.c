@@ -55,7 +55,7 @@ wifi_ap_record_t wifi_scan(void) {
   uint16_t index_ap = 0;
   for (int i = 0; i < number; i++) {
     // Find the AP with the name like 'ESP_'
-    if (strstr((const char *)ap_info[i].ssid, "ESP_") != NULL) {
+    if (strstr((const char *)ap_info[i].ssid, "tpp_") != NULL) {
       index_ap = i;
       ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
       ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);

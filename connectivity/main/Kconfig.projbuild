@@ -36,4 +36,16 @@ menu "ESP Node Configuration"
         default "password"
         help
             Password of the network
+    
+    config SOFTAP_CHANNEL_TO_EMIT
+        int "SoftAP channel to emit"
+        default 1
+        help
+            SoftAP channel to emit
+    
+    config SOFTAP_MAX_STA_CONNECTIONS
+        int "SoftAP max STA connections"
+        default 1
+        help
+            SoftAP max STA connections
 endmenu

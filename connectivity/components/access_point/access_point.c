@@ -1,11 +1,16 @@
+#include <lwip/netdb.h>
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
 #include "nvs_flash.h"
 
 #include "access_point.h"
@@ -28,8 +33,13 @@ void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, con
     ap->wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
   }
   ap->wifi_config.ap.pmf_cfg.required = true;
-  esp_netif_create_default_wifi_ap();
+  // strcpy((char *)ap->network_cidr, network_cidr);
+  esp_netif_t *netif = esp_netif_create_default_wifi_ap();
+  ap->netif = netif;
+  ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap->wifi_config));
+  // Register the event handler
+  ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &ap_event_handler, NULL));
   ap->initialized = true;
 }
 
@@ -72,7 +82,25 @@ void ap_update(AccessPointPtr ap) {
   ap_start(ap);
 };
 
+void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *network_gateway, const char *network_mask) {
+  ESP_ERROR_CHECK(esp_netif_dhcps_stop(ap->netif));
+  esp_netif_ip_info_t ip;
+  memset(&ip, 0 , sizeof(esp_netif_ip_info_t));
+  ip.ip.addr = ipaddr_addr(network_cidr);
+  ip.netmask.addr = ipaddr_addr(network_mask);
+  ip.gw.addr = ipaddr_addr(network_gateway);
+  esp_err_t result = esp_netif_set_ip_info(ap->netif, &ip);
+  ESP_LOGI(TAG, "Setting ip info");
+  ESP_ERROR_CHECK(result);
+  if (result != ESP_OK) {
+      ESP_LOGE(TAG, "Failed to set ip info");
+      return;
+  }
+  esp_netif_dhcps_start(ap->netif);
+};
+
 void ap_start(AccessPointPtr ap) {
+  ESP_LOGI(TAG, "Stoping AP");
   ap->state = active;
   ESP_ERROR_CHECK(esp_wifi_start());
 };
@@ -87,3 +115,16 @@ void ap_restart(AccessPointPtr ap) {
   ap_stop(ap);
   ap_start(ap);
 };
+
+void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
+    ESP_LOGI(TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+  } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
+    ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
+  } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    // ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
+    // ESP_LOGI(TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+  }
+}

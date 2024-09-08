@@ -52,6 +52,7 @@ void test_update_token_ring_message() {
     // Check that the correct bytes in the data array were updated
     assert(message.data[5] == ((new_connection >> 8) & 0xFF));    // High byte
     assert(message.data[6] == (new_connection & 0xFF));           // Low byte
+    assert(message.data[0] == 3);
 
     printf("test_update_token_ring_message passed.\n");
 }

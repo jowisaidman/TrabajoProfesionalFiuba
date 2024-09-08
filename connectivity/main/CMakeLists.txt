@@ -1,6 +1,7 @@
 set(MAIN_SRCS
     "main.c"
     "test_shared_memory.c"
+    "test_token_ring.c"
 )
 
 set(MAIN_INCLUDE_DIRS

@@ -17,10 +17,10 @@
 
 // #include "station.h"
 // #include "access_point.h"
+#include "integration_test.h"
 #include "device.h"
 
 // Tests
-#include "test_shared_memory.h"
 
 /* General config */
 #define LOGGING_TAG "MAIN"
@@ -54,7 +54,8 @@ void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id
 
 void app_main(void) {
   if (RUN_TESTS) {
-      test_shared_memory(1);
+      test_shared_memory(RUN_TESTS);
+      test_token_ring(RUN_TESTS);
       return;
   }
 

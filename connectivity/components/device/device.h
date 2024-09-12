@@ -1,5 +1,7 @@
 #include "esp_wifi.h"
 
+#include "../server/server.h"
+#include "../client/client.h"
 #include "../access_point/access_point.h"
 #include "../station/station.h"
 

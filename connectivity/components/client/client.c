@@ -26,14 +26,14 @@ static const char *payload = "Message from ESP32 ";
 void client(const char* ip)
 {
     char rx_buffer[128];
-    char host_ip[] = "192.168.4.1";
+    // char host_ip[] = ip;
     int addr_family = 0;
     int ip_protocol = 0;
 
     while (1) {
 #if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
-        inet_pton(AF_INET, host_ip, &dest_addr.sin_addr);
+        inet_pton(AF_INET, ip, &dest_addr.sin_addr);
         dest_addr.sin_family = AF_INET;
         dest_addr.sin_port = htons(PORT);
         addr_family = AF_INET;
@@ -48,7 +48,7 @@ void client(const char* ip)
             ESP_LOGE(LOGGING_TAG, "Unable to create socket: errno %d", errno);
             break;
         }
-        ESP_LOGI(LOGGING_TAG, "Socket created, connecting to %s:%d", host_ip, PORT);
+        ESP_LOGI(LOGGING_TAG, "Socket created, connecting to %s:%d", ip, PORT);
 
         int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err != 0) {
@@ -73,7 +73,7 @@ void client(const char* ip)
             // Data received
             else {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(LOGGING_TAG, "Received %d bytes from %s:", len, host_ip);
+                ESP_LOGI(LOGGING_TAG, "Received %d bytes from %s:", len, ip);
                 ESP_LOGI(LOGGING_TAG, "%s", rx_buffer);
             }
         }

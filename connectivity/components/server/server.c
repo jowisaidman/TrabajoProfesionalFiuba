@@ -114,14 +114,12 @@ static void tcp_server_task(void *pvParameters) {
   if (err != 0) {
     ESP_LOGE(LOGGING_TAG, "Socket unable to bind: errno %d", errno);
     ESP_LOGE(LOGGING_TAG, "IPPROTO: %d", addr_family);
-    goto CLEAN_UP;
   }
   ESP_LOGI(LOGGING_TAG, "Socket bound, port %d", PORT);
 
   err = listen(listen_sock, 1);
   if (err != 0) {
     ESP_LOGE(LOGGING_TAG, "Error occurred during listen: errno %d", errno);
-    goto CLEAN_UP;
   }
 
   while (1) {
@@ -158,10 +156,6 @@ static void tcp_server_task(void *pvParameters) {
     shutdown(sock, 0);
     close(sock);
   }
-
-CLEAN_UP:
-  close(listen_sock);
-  vTaskDelete(NULL);
 }
 
 void create_server() {
@@ -171,4 +165,9 @@ void create_server() {
 #ifdef CONFIG_EXAMPLE_IPV6
   xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET6, 5, NULL);
 #endif
+}
+
+void delete_server() {
+  ESP_LOGI(LOGGING_TAG, "Shutting down server socket");
+  vTaskDelete("tcp_server");
 }

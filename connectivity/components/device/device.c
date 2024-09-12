@@ -34,9 +34,11 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
     wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
+    delete_server();
   } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
     ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+    create_server();
   }
 }
 
@@ -65,8 +67,10 @@ void sta_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
     ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
     // client(inet_ntoa(ip_info.gw));
     s_retry_num = 0;
+    char ipbuf[16];
+    char *ip = esp_ip4addr_ntoa(&ip_info.gw, ipbuf, 16);
     // xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+    client(ip);    
   }
 }
 

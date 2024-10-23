@@ -27,6 +27,9 @@ static EventGroupHandle_t s_wifi_event_group;
 
 static int s_retry_num = 0;
 
+static Server server = {};
+static ServerPtr server_ptr = &server;
+
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
@@ -34,11 +37,11 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
     wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
-    delete_server();
+    delete_server(server_ptr);
   } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
     ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
-    create_server();
+    create_server(server_ptr);
   }
 }
 
@@ -70,7 +73,9 @@ void sta_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
     char ipbuf[16];
     char *ip = esp_ip4addr_ntoa(&ip_info.gw, ipbuf, 16);
     // xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    client(ip);    
+    sleep(10);
+    client(ip);
+    ESP_LOGI(LOGGING_TAG, "---------------------------------------------After client");
   }
 }
 
@@ -104,6 +109,8 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   Station station = {};
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station; 
+
+  init_server(server_ptr);
 
   // Initialize NVS
   esp_err_t ret = nvs_flash_init();

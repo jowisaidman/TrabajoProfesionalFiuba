@@ -1,21 +1,20 @@
-// struct Server {
-//   // Members
-//   char device_uuid[32];
-//   uint8_t device_orientation;
-//   uint8_t device_is_root;
-//   char ssid[32];
-//   char password[64];
-//   uint8_t channel;
-//   Device_Mode mode;
-//   Device_State state;
-//   AccessPoint access_point;
-//   AccessPointPtr access_point_ptr;
-//   Station station;
-//   StationPtr station_ptr;
-// };
+struct Server {
+  // Members
+  char addr_str[128];
+  int addr_family;
+  int ip_protocol;
+  int keepAlive;
+  int keepIdle;
+  int keepInterval;
+  int keepCount;
+  int listen_sock;
+  int sock;
+  TaskHandle_t server_task_handle;
+};
 
-// typedef struct Server Server;
-// typedef struct Server* ServerPtr;
+typedef struct Server Server;
+typedef struct Server* ServerPtr;
 
-void create_server();
-void delete_server();
+void create_server(ServerPtr server_ptr);
+void delete_server(ServerPtr server_ptr);
+void init_server(ServerPtr server_ptr);

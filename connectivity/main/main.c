@@ -58,6 +58,12 @@ void app_main(void) {
 
   device_set_mode(device_ptr, DEVICE_INITIAL_MODE);
 
+  // create_server();
+
+  // sleep(10);
+
+  // delete_server();
+
   // device_set_network_ap(device_ptr, "10.202.0.1", "10.203.255.254", "255.254.0.0");
 
   // sleep(30);

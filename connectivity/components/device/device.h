@@ -38,6 +38,10 @@ struct Device {
   AccessPointPtr access_point_ptr;
   Station station;
   StationPtr station_ptr;
+  Server server;
+  ServerPtr server_ptr;
+  Client client;
+  ClientPtr client_ptr;
 };
 
 typedef struct Device Device;

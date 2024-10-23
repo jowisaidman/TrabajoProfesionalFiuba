@@ -31,17 +31,12 @@ void client(const char* ip)
     int ip_protocol = 0;
 
     while (1) {
-#if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
         inet_pton(AF_INET, ip, &dest_addr.sin_addr);
         dest_addr.sin_family = AF_INET;
         dest_addr.sin_port = htons(PORT);
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
-#elif defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
-        struct sockaddr_storage dest_addr = { 0 };
-        ESP_ERROR_CHECK(get_addr_from_stdin(PORT, SOCK_STREAM, &ip_protocol, &addr_family, &dest_addr));
-#endif
 
         int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
@@ -58,11 +53,15 @@ void client(const char* ip)
         ESP_LOGI(LOGGING_TAG, "Successfully connected");
 
         while (1) {
-            int err = send(sock, payload, strlen(payload), 0);
-            if (err < 0) {
-                ESP_LOGE(LOGGING_TAG, "Error occurred during sending: errno %d", errno);
-                break;
-            }
+            // int err = send(sock, payload, strlen(payload), 0);
+            // if (err < 0) {
+            //     ESP_LOGE(LOGGING_TAG, "Error occurred during sending: errno %d", errno);
+            //     break;
+            // }
+
+            // ESP_LOGI(LOGGING_TAG, "Sent %d bytes from %s:", strlen(payload), payload);
+
+            sleep(3);
 
             int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
             // Error occurred during receiving

@@ -5,3 +5,5 @@ esp-idf/
 .vscode/
 
 /connectivity/tests
+utils/
+logger/

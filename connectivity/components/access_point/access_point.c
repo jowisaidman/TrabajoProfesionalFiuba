@@ -18,7 +18,7 @@
 
 #include <string.h>
 
-static const char *TAG = "AP";
+static const char *LOGGING_TAG = "AP";
 
 void ap_init(AccessPointPtr ap, uint8_t wifi_channel, const char *wifi_ssid, const char *wifi_password, uint8_t wifi_max_sta_conn) {
   // Populate the Access Point wifi_config_t 
@@ -52,17 +52,17 @@ bool ap_is_active(AccessPointPtr ap) {
 }
 
 void ap_print_info(AccessPointPtr ap) {
-  ESP_LOGI(TAG, "wifi_config.ap.channel: %d", ap->wifi_config.ap.channel);
-  ESP_LOGI(TAG, "wifi_config.ap.max_connection: %d", ap->wifi_config.ap.max_connection);
-  ESP_LOGI(TAG, "wifi_config.ap.authmode: %d", ap->wifi_config.ap.authmode);
-  ESP_LOGI(TAG, "wifi_config.ap.ssid: %s", ap->wifi_config.ap.ssid);
-  ESP_LOGI(TAG, "wifi_config.ap.ssid_len: %d", ap->wifi_config.ap.ssid_len);
-  ESP_LOGI(TAG, "wifi_config.ap.password: %s", ap->wifi_config.ap.password);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.channel: %d", ap->wifi_config.ap.channel);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.max_connection: %d", ap->wifi_config.ap.max_connection);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.authmode: %d", ap->wifi_config.ap.authmode);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.ssid: %s", ap->wifi_config.ap.ssid);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.ssid_len: %d", ap->wifi_config.ap.ssid_len);
+  ESP_LOGI(LOGGING_TAG, "wifi_config.ap.password: %s", ap->wifi_config.ap.password);
 }
 
 void ap_set_channel(AccessPointPtr ap, uint8_t channel) {
   ap->wifi_config.ap.channel = channel;
-  ESP_LOGI(TAG, "Channel set on: %u", ap->channel);
+  ESP_LOGI(LOGGING_TAG, "Channel set on: %u", ap->channel);
 };
 
 void ap_set_ssid(AccessPointPtr ap, const char *ssid) {
@@ -90,23 +90,23 @@ void ap_set_network(AccessPointPtr ap, const char *network_cidr, const char *net
   ip.netmask.addr = ipaddr_addr(network_mask);
   ip.gw.addr = ipaddr_addr(network_gateway);
   esp_err_t result = esp_netif_set_ip_info(ap->netif, &ip);
-  ESP_LOGI(TAG, "Setting ip info");
+  ESP_LOGI(LOGGING_TAG, "Setting ip info");
   ESP_ERROR_CHECK(result);
   if (result != ESP_OK) {
-      ESP_LOGE(TAG, "Failed to set ip info");
+      ESP_LOGE(LOGGING_TAG, "Failed to set ip info");
       return;
   }
   esp_netif_dhcps_start(ap->netif);
 };
 
 void ap_start(AccessPointPtr ap) {
-  ESP_LOGI(TAG, "Stoping AP");
+  ESP_LOGI(LOGGING_TAG, "Stoping AP");
   ap->state = active;
   ESP_ERROR_CHECK(esp_wifi_start());
 };
 
 void ap_stop(AccessPointPtr ap){
-  ESP_LOGI(TAG, "Stoping AP");
+  ESP_LOGI(LOGGING_TAG, "Stoping AP");
   ap->state = inactive;
   ESP_ERROR_CHECK(esp_wifi_stop());
 };
@@ -119,10 +119,10 @@ void ap_restart(AccessPointPtr ap) {
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
-    ESP_LOGI(TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
   } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
     wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-    ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
   } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
     // ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     // ESP_LOGI(TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));

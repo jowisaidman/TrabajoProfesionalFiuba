@@ -39,19 +39,6 @@
 
 #define RUN_TESTS 0 // 1 = run tests, 0 = run app TODO: set this from config
 
-void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-  if (event_id == WIFI_EVENT_AP_STACONNECTED) {
-    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
-    ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
-  }
-}
-
 void app_main(void) {
   if (RUN_TESTS) {
       test_shared_memory(1);
@@ -70,6 +57,12 @@ void app_main(void) {
   device_init(device_ptr, DEVICE_UUID, DEVICE_ORIENTATION, DEVICE_WIFI_NETWORK_PREFIX, DEVICE_WIFI_NETWORK_PASSWORD, SOFTAP_CHANNEL_TO_EMIT, SOFTAP_MAX_STA_CONNECTIONS, DEVICE_IS_ROOT_NODE, DEVICE_INITIAL_MODE);
 
   device_set_mode(device_ptr, DEVICE_INITIAL_MODE);
+
+  // create_server();
+
+  // sleep(10);
+
+  // delete_server();
 
   // device_set_network_ap(device_ptr, "10.202.0.1", "10.203.255.254", "255.254.0.0");
 

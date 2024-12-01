@@ -14,7 +14,90 @@
 
 #define LOGGING_TAG "DEVICE"
 
-void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root) {
+#define DEFAULT_SCAN_LIST_SIZE 10
+#define EXAMPLE_ESP_MAXIMUM_RETRY 10
+static EventGroupHandle_t s_wifi_event_group;
+
+/* The event group allows multiple bits for each event, but we only care about two events:
+ * - we are connected to the AP with an IP
+ * - we failed to connect after the maximum amount of retries */
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT BIT1
+#define PORT 3333
+
+static int s_retry_num = 0;
+
+static Server server = {};
+static ServerPtr server_ptr = &server;
+
+void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  if (event_id == WIFI_EVENT_AP_STACONNECTED) {
+    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+  } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
+    delete_server(server_ptr);
+  } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+    create_server(server_ptr);
+  }
+}
+
+void sta_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    esp_wifi_connect();
+  } else if (event_base == WIFI_EVENT &&
+             event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+      esp_wifi_connect();
+      s_retry_num++;
+      ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
+    } else {
+      // xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+    }
+    ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+    ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+
+    // Retrieve and print IP address, netmask, and gateway
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+    ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+    ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+    ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+    // client(inet_ntoa(ip_info.gw));
+    s_retry_num = 0;
+    char ipbuf[16];
+    char *ip = esp_ip4addr_ntoa(&ip_info.gw, ipbuf, 16);
+    // xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    sleep(10);
+    client(ip);
+    ESP_LOGI(LOGGING_TAG, "---------------------------------------------After client");
+  }
+}
+
+
+void device_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == WIFI_EVENT_STA_START) {
+    sta_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    sta_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    sta_event_handler(arg, event_base, event_id, event_data);
+  }
+}
+
+void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
   device_ptr->mode = NAN;
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
@@ -26,6 +109,8 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   Station station = {};
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station; 
+
+  init_server(server_ptr);
 
   // Initialize NVS
   esp_err_t ret = nvs_flash_init();
@@ -41,9 +126,13 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
+  if (mode == AP) {
+    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
+  } else if (mode == STATION) {
+    device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+  }
 
-  device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+  ESP_ERROR_CHECK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &device_event_handler, NULL));
 }
 
 void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections) {
@@ -125,11 +214,11 @@ void device_restart_ap(DevicePtr device_ptr) {
 // Station
 
 void device_start_station(DevicePtr device_ptr) {
-  if (ap_is_initialized(device_ptr->access_point_ptr)) {
+  if (station_is_initialized(device_ptr->station_ptr)) {
     station_start(device_ptr->station_ptr);
     device_ptr->state = d_active;
   } else {
-    ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
+    ESP_LOGE(LOGGING_TAG, "Station is not initialized");
   }
 };
 

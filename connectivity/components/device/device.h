@@ -1,5 +1,7 @@
 #include "esp_wifi.h"
 
+#include "../server/server.h"
+#include "../client/client.h"
 #include "../access_point/access_point.h"
 #include "../station/station.h"
 
@@ -36,13 +38,17 @@ struct Device {
   AccessPointPtr access_point_ptr;
   Station station;
   StationPtr station_ptr;
+  Server server;
+  ServerPtr server_ptr;
+  Client client;
+  ClientPtr client_ptr;
 };
 
 typedef struct Device Device;
 typedef struct Device* DevicePtr;
 
 // Methods
-void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t softap_max_sta_connections, uint8_t device_is_root);
+void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t softap_max_sta_connections, uint8_t device_is_root,Device_Mode mode);
 void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections);
 void device_init_station(DevicePtr device_ptr, const char* wifi_ssid_like, uint16_t orientation, char* device_uuid, const char* password);
 void device_set_mode(DevicePtr device_ptr, Device_Mode mode);

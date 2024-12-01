@@ -18,19 +18,19 @@
 // #include "../client/client.h"
 
 #define DEFAULT_SCAN_LIST_SIZE 10
-#define EXAMPLE_ESP_MAXIMUM_RETRY 10
-static EventGroupHandle_t s_wifi_event_group;
+// #define EXAMPLE_ESP_MAXIMUM_RETRY 10
+EventGroupHandle_t s_wifi_event_group;
 
-/* The event group allows multiple bits for each event, but we only care about two events:
- * - we are connected to the AP with an IP
- * - we failed to connect after the maximum amount of retries */
+// /* The event group allows multiple bits for each event, but we only care about two events:
+//  * - we are connected to the AP with an IP
+//  * - we failed to connect after the maximum amount of retries */
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
-#define PORT 3333
+// #define PORT 3333
 
-static const char* TAG = "station";
+static const char* LOGGING_TAG = "station";
 
-static int s_retry_num = 0;
+// static int s_retry_num = 0;
 
 /*
  * @brief Initialize the WiFi stack in station mode
@@ -55,10 +55,10 @@ void station_find_ap(StationPtr stationPtr) {
   memset(ap_info, 0, sizeof(ap_info));
 
   esp_wifi_scan_start(NULL, true);
-  ESP_LOGI(TAG, "Max AP number ap_info can hold = %u", number);
+  ESP_LOGI(LOGGING_TAG, "Max AP number ap_info can hold = %u", number);
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
   ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
-  ESP_LOGI(TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
+  ESP_LOGI(LOGGING_TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
   
   uint16_t networks_to_scan;
   if (ap_count > number) {
@@ -72,10 +72,10 @@ void station_find_ap(StationPtr stationPtr) {
     if (is_network_allowed(stationPtr->device_uuid, stationPtr->ssid_like, (char*)ap_info[i].ssid)) {
       uint16_t channel = ap_info[i].primary;
       if (is_channel_allowed(stationPtr->device_orientation, channel)) {
-        ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
-        ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
-        ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
-        ESP_LOGI(TAG, "Index \t\t%u", i);
+        ESP_LOGI(LOGGING_TAG, "SSID \t\t%s", ap_info[i].ssid);
+        ESP_LOGI(LOGGING_TAG, "RSSI \t\t%d", ap_info[i].rssi);
+        ESP_LOGI(LOGGING_TAG, "Channel \t\t%d", ap_info[i].primary);
+        ESP_LOGI(LOGGING_TAG, "Index \t\t%u", i);
         memcpy(&stationPtr->wifi_ap_found, &ap_info[i], sizeof(ap_info[i]));
         stationPtr->ap_found = true;
         break;
@@ -84,9 +84,9 @@ void station_find_ap(StationPtr stationPtr) {
   }
 
   if (!stationPtr->ap_found) {
-    ESP_LOGI(TAG, "No AP found");
+    ESP_LOGI(LOGGING_TAG, "No AP found");
   } else {
-    ESP_LOGI(TAG, "AP found");
+    ESP_LOGI(LOGGING_TAG, "AP found");
     transform_wifi_ap_record_to_config(stationPtr);
   }
 }
@@ -98,36 +98,36 @@ void station_find_ap(StationPtr stationPtr) {
  * @param event_id The event id
  * @param event_data The event data
  */
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data) {
-  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-    esp_wifi_connect();
-  } else if (event_base == WIFI_EVENT &&
-             event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-      esp_wifi_connect();
-      s_retry_num++;
-      ESP_LOGI(TAG, "retry to connect to the AP");
-    } else {
-      xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-    }
-    ESP_LOGI(TAG, "connect to the AP fail");
-  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-    ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+// static void event_handler(void* arg, esp_event_base_t event_base,
+//                           int32_t event_id, void* event_data) {
+//   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+//     esp_wifi_connect();
+//   } else if (event_base == WIFI_EVENT &&
+//              event_id == WIFI_EVENT_STA_DISCONNECTED) {
+//     if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+//       esp_wifi_connect();
+//       s_retry_num++;
+//       ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
+//     } else {
+//       xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+//     }
+//     ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
+//   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+//     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+//     ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
 
-    // Retrieve and print IP address, netmask, and gateway
-    esp_netif_ip_info_t ip_info;
-    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
-    ESP_LOGI(TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
-    ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
-    ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    // client(inet_ntoa(ip_info.gw));
-    s_retry_num = 0;
-    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
-  }
-}
+//     // Retrieve and print IP address, netmask, and gateway
+//     esp_netif_ip_info_t ip_info;
+//     esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+//     ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+//     ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+//     ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+//     // client(inet_ntoa(ip_info.gw));
+//     s_retry_num = 0;
+//     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+//     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+//   }
+// }
 
 void station_start(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -135,7 +135,7 @@ void station_start(StationPtr stationPtr) {
 }
 
 void station_connect(StationPtr stationPtr) {
-  ESP_LOGI(TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
+  ESP_LOGI(LOGGING_TAG, "Connecting to %s...", stationPtr->wifi_config.sta.ssid);
   ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &stationPtr->wifi_config));
   ESP_ERROR_CHECK(esp_wifi_connect());
   stationPtr->state = s_active;
@@ -185,10 +185,10 @@ void wait_connection_established() {
   /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
    * happened. */
   if (bits & WIFI_CONNECTED_BIT) {
-    ESP_LOGI(TAG, "connected to ap");
+    ESP_LOGI(LOGGING_TAG, "connected to ap");
   } else if (bits & WIFI_FAIL_BIT) {
-    ESP_LOGI(TAG, "Failed to connect");
+    ESP_LOGI(LOGGING_TAG, "Failed to connect");
   } else {
-    ESP_LOGE(TAG, "UNEXPECTED EVENT");
+    ESP_LOGE(LOGGING_TAG, "UNEXPECTED EVENT");
   }
 }

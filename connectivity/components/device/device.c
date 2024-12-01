@@ -14,7 +14,7 @@
 
 #define LOGGING_TAG "DEVICE"
 
-void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root) {
+void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
   device_ptr->mode = NAN;
   device_ptr->state = d_inactive;
   device_ptr->device_is_root = device_is_root;
@@ -41,9 +41,12 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
+  if (mode == AP) {
+    device_init_ap(device_ptr, ap_channel_to_emit, wifi_network_prefix, device_uuid, wifi_network_password, ap_max_sta_connections);
+  } else if (mode == STATION) {
+    device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
+  }
 
-  device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
 }
 
 void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections) {
@@ -125,11 +128,11 @@ void device_restart_ap(DevicePtr device_ptr) {
 // Station
 
 void device_start_station(DevicePtr device_ptr) {
-  if (ap_is_initialized(device_ptr->access_point_ptr)) {
+  if (station_is_initialized(device_ptr->station_ptr)) {
     station_start(device_ptr->station_ptr);
     device_ptr->state = d_active;
   } else {
-    ESP_LOGE(LOGGING_TAG, "Access Point is not initialized");
+    ESP_LOGE(LOGGING_TAG, "Station is not initialized");
   }
 };
 

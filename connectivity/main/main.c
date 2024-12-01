@@ -67,11 +67,11 @@ void app_main(void) {
   Device device = {};
   DevicePtr device_ptr = &device;
   
-  device_init(device_ptr, DEVICE_UUID, DEVICE_ORIENTATION, DEVICE_WIFI_NETWORK_PREFIX, DEVICE_WIFI_NETWORK_PASSWORD, SOFTAP_CHANNEL_TO_EMIT, SOFTAP_MAX_STA_CONNECTIONS, DEVICE_IS_ROOT_NODE);
+  device_init(device_ptr, DEVICE_UUID, DEVICE_ORIENTATION, DEVICE_WIFI_NETWORK_PREFIX, DEVICE_WIFI_NETWORK_PASSWORD, SOFTAP_CHANNEL_TO_EMIT, SOFTAP_MAX_STA_CONNECTIONS, DEVICE_IS_ROOT_NODE, DEVICE_INITIAL_MODE);
 
   device_set_mode(device_ptr, DEVICE_INITIAL_MODE);
 
-  device_set_network_ap(device_ptr, "10.202.0.1", "10.203.255.254", "255.254.0.0");
+  // device_set_network_ap(device_ptr, "10.202.0.1", "10.203.255.254", "255.254.0.0");
 
   // sleep(30);
 

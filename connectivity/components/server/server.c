@@ -75,7 +75,6 @@ static void tcp_server_task(void *pvParameters) {
   int keepCount = KEEPALIVE_COUNT;
   struct sockaddr_storage dest_addr;
 
-#ifdef CONFIG_EXAMPLE_IPV4
   if (addr_family == AF_INET) {
     struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
     dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
@@ -83,16 +82,6 @@ static void tcp_server_task(void *pvParameters) {
     dest_addr_ip4->sin_port = htons(PORT);
     ip_protocol = IPPROTO_IP;
   }
-#endif
-#ifdef CONFIG_EXAMPLE_IPV6
-  if (addr_family == AF_INET6) {
-    struct sockaddr_in6 *dest_addr_ip6 = (struct sockaddr_in6 *)&dest_addr;
-    bzero(&dest_addr_ip6->sin6_addr.un, sizeof(dest_addr_ip6->sin6_addr.un));
-    dest_addr_ip6->sin6_family = AF_INET6;
-    dest_addr_ip6->sin6_port = htons(PORT);
-    ip_protocol = IPPROTO_IPV6;
-  }
-#endif
 
   int listen_sock = socket(addr_family, SOCK_STREAM, ip_protocol);
   if (listen_sock < 0) {
@@ -141,16 +130,9 @@ static void tcp_server_task(void *pvParameters) {
     setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
     setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
     // Convert ip address to string
-#ifdef CONFIG_EXAMPLE_IPV4
     if (source_addr.ss_family == PF_INET) {
       inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
     }
-#endif
-#ifdef CONFIG_EXAMPLE_IPV6
-    if (source_addr.ss_family == PF_INET6) {
-      inet6_ntoa_r(((struct sockaddr_in6 *)&source_addr)->sin6_addr, addr_str, sizeof(addr_str) - 1);
-    }
-#endif
     ESP_LOGI(LOGGING_TAG, "Socket accepted ip address: %s", addr_str);
 
     do_retransmit(sock);
@@ -165,10 +147,5 @@ CLEAN_UP:
 }
 
 void create_server() {
-#ifdef CONFIG_EXAMPLE_IPV4
   xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET, 5, NULL);
-#endif
-#ifdef CONFIG_EXAMPLE_IPV6
-  xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET6, 5, NULL);
-#endif
 }

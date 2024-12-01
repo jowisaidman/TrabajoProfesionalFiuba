@@ -14,6 +14,43 @@
 
 #define LOGGING_TAG "DEVICE"
 
+void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
+    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) {
+    ESP_LOGI(LOGGING_TAG, "AP started");
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
+    ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+  } 
+}
+
+void device_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) { 
+    ap_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == WIFI_EVENT_STA_START) {
+    // sta_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    // sta_event_handler(arg, event_base, event_id, event_data);
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    // sta_event_handler(arg, event_base, event_id, event_data);
+  } else {
+    ESP_LOGI(LOGGING_TAG, "Event not handled: %s %ld", event_base, event_id);
+  }
+}
+
 void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_orientation, const char *wifi_network_prefix, const char *wifi_network_password, uint8_t ap_channel_to_emit, uint8_t ap_max_sta_connections, uint8_t device_is_root, Device_Mode mode) {
   device_ptr->mode = NAN;
   device_ptr->state = d_inactive;
@@ -47,6 +84,7 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
     device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
   }
 
+  ESP_ERROR_CHECK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &device_event_handler, NULL));
 }
 
 void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections) {

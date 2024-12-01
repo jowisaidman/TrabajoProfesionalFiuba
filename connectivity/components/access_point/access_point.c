@@ -115,17 +115,3 @@ void ap_restart(AccessPointPtr ap) {
   ap_stop(ap);
   ap_start(ap);
 };
-
-void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-  ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
-  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
-    wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
-    wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
-  } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
-    ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
-    ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
-  }
-}

@@ -98,36 +98,39 @@ void station_find_ap(StationPtr stationPtr) {
  * @param event_id The event id
  * @param event_data The event data
  */
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data) {
-  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-    esp_wifi_connect();
-  } else if (event_base == WIFI_EVENT &&
-             event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-      esp_wifi_connect();
-      s_retry_num++;
-      ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
-    } else {
-      xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-    }
-    ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
-  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-    ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+// static void event_handler(void* arg, esp_event_base_t event_base,
+//                           int32_t event_id, void* event_data) {
+//   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+//     esp_wifi_connect();
+//   } else if (event_base == WIFI_EVENT &&
+//              event_id == WIFI_EVENT_STA_DISCONNECTED) {
+//     if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+//       esp_wifi_connect();
+//       s_retry_num++;
+//       ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
+//     } else {
+//       xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+//     }
+//     ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
+//   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+//     ESP_LOGI(LOGGING_TAG, "got ip");
+//     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+//     ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
 
-    // Retrieve and print IP address, netmask, and gateway
-    esp_netif_ip_info_t ip_info;
-    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
-    ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
-    ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
-    ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
-    // client(inet_ntoa(ip_info.gw));
-    s_retry_num = 0;
-    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
-  }
-}
+//     // Retrieve and print IP address, netmask, and gateway
+//     esp_netif_ip_info_t ip_info;
+//     esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+//     ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+//     ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+//     ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+//     // client(inet_ntoa(ip_info.gw));
+//     s_retry_num = 0;
+//     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+//     // xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+//   } else {
+//     ESP_LOGI(LOGGING_TAG, "Event not handled: %s %ld", event_base, event_id);
+//   }
+// }
 
 void station_start(StationPtr stationPtr) {
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));

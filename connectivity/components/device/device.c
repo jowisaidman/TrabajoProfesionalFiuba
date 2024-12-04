@@ -15,7 +15,7 @@
 #define LOGGING_TAG "DEVICE"
 
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-  ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
+  ESP_LOGI(LOGGING_TAG, "AP HANDLER: Event received: %s %ld", event_base, event_id);
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
@@ -27,8 +27,34 @@ void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, 
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
     ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
+  } else {
+    ESP_LOGI(LOGGING_TAG, "AP HANDLER: Event not handled: %s %ld", event_base, event_id);
   } 
 }
+
+static void sta_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+  ESP_LOGI(LOGGING_TAG, "STATION HANDLER: Event received: %s %ld", event_base, event_id);
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    esp_wifi_connect();
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    esp_wifi_connect();
+    ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    ESP_LOGI(LOGGING_TAG, "got ip");
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+    ESP_LOGI(LOGGING_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+
+    // Retrieve and print IP address, netmask, and gateway
+    esp_netif_ip_info_t ip_info;
+    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+    ESP_LOGI(LOGGING_TAG, "IP Address: " IPSTR, IP2STR(&ip_info.ip));
+    ESP_LOGI(LOGGING_TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+    ESP_LOGI(LOGGING_TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
+  } else {
+    ESP_LOGI(LOGGING_TAG, "STATION HANDLER: Event not handled: %s %ld", event_base, event_id);
+  }
+}
+
 
 void device_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   ESP_LOGI(LOGGING_TAG, "Event received: %s %ld", event_base, event_id);
@@ -41,11 +67,11 @@ void device_event_handler(void *arg, esp_event_base_t event_base, int32_t event_
   } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) { 
     ap_event_handler(arg, event_base, event_id, event_data);
   } else if (event_base == IP_EVENT && event_id == WIFI_EVENT_STA_START) {
-    // sta_event_handler(arg, event_base, event_id, event_data);
+    sta_event_handler(arg, event_base, event_id, event_data);
   } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    // sta_event_handler(arg, event_base, event_id, event_data);
+    sta_event_handler(arg, event_base, event_id, event_data);
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    // sta_event_handler(arg, event_base, event_id, event_data);
+    sta_event_handler(arg, event_base, event_id, event_data);
   } else {
     ESP_LOGI(LOGGING_TAG, "Event not handled: %s %ld", event_base, event_id);
   }

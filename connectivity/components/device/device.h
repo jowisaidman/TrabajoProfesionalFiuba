@@ -40,8 +40,8 @@ struct Device {
   StationPtr station_ptr;
   Server server;
   ServerPtr server_ptr;
-  Client client;
-  ClientPtr client_ptr;
+  // Client client;
+  // ClientPtr client_ptr;
 };
 
 typedef struct Device Device;

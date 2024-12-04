@@ -27,36 +27,30 @@ static EventGroupHandle_t s_wifi_event_group;
 
 static int s_retry_num = 0;
 
-static Server server = {};
-static ServerPtr server_ptr = &server;
+// static Server server = {};
+// static ServerPtr server_ptr = &server;
 
 void ap_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+  // DevicePtr device_ptr = (DevicePtr)arg;
   if (event_id == WIFI_EVENT_AP_STACONNECTED) {
     wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
   } else if (event_id == WIFI_EVENT_AP_STADISCONNECTED) {
     wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station " MACSTR " leave, AID=%d", MAC2STR(event->mac), event->aid);
-    delete_server(server_ptr);
-  } else if (event_id == IP_EVENT_AP_STAIPASSIGNED) {
+    // delete_server(server_ptr);
+  } else if (event_base == IP_EVENT && event_id == IP_EVENT_AP_STAIPASSIGNED) {
     ip_event_ap_staipassigned_t *event = (ip_event_ap_staipassigned_t *)event_data;
     ESP_LOGI(LOGGING_TAG, "station ip:" IPSTR ", mac:" MACSTR "", IP2STR(&event->ip), MAC2STR(event->mac));
-    create_server(server_ptr);
+    // create_server(server_ptr);
   }
 }
 
 void sta_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
-  } else if (event_base == WIFI_EVENT &&
-             event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-      esp_wifi_connect();
-      s_retry_num++;
-      ESP_LOGI(LOGGING_TAG, "retry to connect to the AP");
-    } else {
-      // xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-    }
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    esp_wifi_connect();
     ESP_LOGI(LOGGING_TAG, "connect to the AP fail");
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
@@ -73,8 +67,8 @@ void sta_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
     char ipbuf[16];
     char *ip = esp_ip4addr_ntoa(&ip_info.gw, ipbuf, 16);
     // xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    sleep(10);
-    client(ip);
+    // sleep(10);
+    // client(ip);
     ESP_LOGI(LOGGING_TAG, "---------------------------------------------After client");
   }
 }
@@ -94,6 +88,8 @@ void device_event_handler(void *arg, esp_event_base_t event_base, int32_t event_
     sta_event_handler(arg, event_base, event_id, event_data);
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     sta_event_handler(arg, event_base, event_id, event_data);
+  } else {
+    ESP_LOGI(LOGGING_TAG, "Event received unhandled: %s %ld", event_base, event_id);
   }
 }
 
@@ -110,7 +106,11 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
   device_ptr->station = station;
   device_ptr->station_ptr = &device_ptr->station; 
 
-  init_server(server_ptr);
+  // Server server = {};
+  // device_ptr->server = server;
+  // device_ptr->server_ptr = &device_ptr->server;
+
+  // init_server(server_ptr);
 
   // Initialize NVS
   esp_err_t ret = nvs_flash_init();
@@ -132,7 +132,7 @@ void device_init(DevicePtr device_ptr, const char *device_uuid, uint8_t device_o
     device_init_station(device_ptr, wifi_network_prefix, device_orientation, device_uuid, wifi_network_password);
   }
 
-  ESP_ERROR_CHECK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &device_event_handler, NULL));
+  // ESP_ERROR_CHECK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, &device_event_handler, device_ptr));
 }
 
 void device_init_ap(DevicePtr device_ptr, uint8_t channel, const char *wifi_network_prefix ,const char *device_uuid, const char *password, uint8_t max_sta_connections) {

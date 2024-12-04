@@ -49,8 +49,10 @@ static void do_retransmit(const int sock) {
     ESP_LOGI(LOGGING_TAG, "Received %d bytes", len);
     if (len < 0) {
       ESP_LOGE(LOGGING_TAG, "Error occurred during receiving: errno %d", errno);
+      return;
     } else if (len == 0) {
       ESP_LOGW(LOGGING_TAG, "Connection closed");
+      return;
     } else {
       rx_buffer[len] = 0;  // Null-terminate whatever is received and treat it like a string
       ESP_LOGI(LOGGING_TAG, "Received %d bytes: %s", len, rx_buffer);
@@ -73,7 +75,9 @@ static void do_retransmit(const int sock) {
 }
 
 static void tcp_server_task(void *pvParameters) {
+  // ServerParametersPtr params = (ServerParametersPtr)pvParameters;
   char addr_str[128];
+  // int addr_family = params->addr_family;
   int addr_family = (int)pvParameters;
   int ip_protocol = 0;
   int keepAlive = 1;
@@ -164,43 +168,17 @@ static void tcp_server_task(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
-// static TaskHandle_t server_task_handle = NULL;
-
-void init_server(ServerPtr server_ptr) {
-  server_ptr->listen_sock = -1;
-  server_ptr->sock = -1;
-  server_ptr->server_task_handle = NULL;
+void create_server(ServerPtr server) {
+  // ServerParameters params = {};
+  // ServerParametersPtr paramsPtr = &params;
+  // paramsPtr->addr_family = AF_INET;
+  // paramsPtr->server = server;
+  TaskHandle_t task = NULL;
+  xTaskCreate(tcp_server_task, "tcp_server", 4096, AF_INET, 5, NULL);
+  // server->task = task;
 }
 
-void create_server(ServerPtr server_ptr) {
-  // xTaskCreate(tcp_server_task, "tcp_server", 4096, (void *)AF_INET, 5, &server_task_handle);
-  // volatile eTaskState state = eTaskGetState(server_task_handle);
-  // ESP_LOGI(LOGGING_TAG, "Task state: %d", state);
-  xTaskCreatePinnedToCore(tcp_server_task, "tcp_server", 4096, (void *)AF_INET, 5, &server_ptr->server_task_handle, 1);
-  volatile eTaskState state = eTaskGetState(server_ptr->server_task_handle);
-  ESP_LOGI(LOGGING_TAG, "Task state: %d", state);
-}
-
-void delete_server(ServerPtr server_ptr) {
-  volatile eTaskState state = eTaskGetState(server_ptr->server_task_handle);
-  ESP_LOGI(LOGGING_TAG, "Task state: %d", state);
+void delete_server(ServerPtr server) {
   ESP_LOGI(LOGGING_TAG, "Shutting down server socket");
-  ESP_LOGI(LOGGING_TAG, "listen_sock: %d", server_ptr->listen_sock);
-  ESP_LOGI(LOGGING_TAG, "sock: %d", server_ptr->sock);
-  if(state == eRunning) {
-    vTaskDelete(server_ptr->server_task_handle);
-  }
-  if (server_ptr->listen_sock > 0) {
-    shutdown(server_ptr->listen_sock, 0);
-    close(server_ptr->listen_sock);
-  }
-  ESP_LOGI(LOGGING_TAG, "Server listen socket deleted");
-  if (server_ptr->sock > 0) {
-    shutdown(server_ptr->sock, 0);
-    close(server_ptr->sock);
-  }
-  ESP_LOGI(LOGGING_TAG, "Server socket deleted");
-  ESP_LOGI(LOGGING_TAG, "Server socket deleted");
-  state = eTaskGetState(server_ptr->server_task_handle);
-  ESP_LOGI(LOGGING_TAG, "Task state: %d", state);
+  vTaskDelete(NULL);
 }

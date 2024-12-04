@@ -58,6 +58,8 @@ void app_main(void) {
 
   device_set_mode(device_ptr, DEVICE_INITIAL_MODE);
 
+  ESP_LOGI(LOGGING_TAG, "Device Initialized");
+
   // create_server();
 
   // sleep(10);

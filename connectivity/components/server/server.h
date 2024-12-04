@@ -1,15 +1,9 @@
 struct Server {
   // Members
-  char addr_str[128];
-  int addr_family;
-  int ip_protocol;
-  int keepAlive;
-  int keepIdle;
-  int keepInterval;
-  int keepCount;
   int listen_sock;
-  int sock;
-  TaskHandle_t server_task_handle;
+  TaskHandle_t task;
+  StackType_t xStack[ 2 ];
+  StaticTask_t xTaskBuffer;
 };
 
 typedef struct Server Server;

@@ -38,6 +38,12 @@ Exportar el comando, dentro de /Users/<user_name>/esp/esp-idf. Hay que hacer est
 . ./export.sh
 ```
 
+O desde el directorio actual:
+
+```
+source ~/esp/esp-idf/export.sh
+```
+
 ### Paso 5:
 
 Buildear el proyecto, dentro de connectivity:

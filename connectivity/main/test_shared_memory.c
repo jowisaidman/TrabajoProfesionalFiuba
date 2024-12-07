@@ -1,4 +1,5 @@
-#include "test_shared_memory.h"
+#include "integration_test.h"
+#include "shared_memory.h"
 
 void test_init_shared_memory() {
     SharedMemory shared_memory;
